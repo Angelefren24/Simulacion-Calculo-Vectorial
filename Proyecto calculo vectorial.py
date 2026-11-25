@@ -1,5 +1,5 @@
 #explicar para que son cada una de las librerias importadas:
-#
+#Angel
 import sys     
 import time
 import ctypes
@@ -8,7 +8,7 @@ import numpy as np
 import pyvista as pv
 
 #explicar para que esto:
-#
+#Angel
 from scipy.integrate import tplquad
 from pyvistaqt import QtInteractor
 from PySide6.QtCore import QTimer, Qt, QEvent
@@ -48,6 +48,7 @@ AZUL_RECORRIDO = "#1E90FF"
 
     # FUNCIONES MATEMATICAS
 #para que sirve esta funcion 
+#Didi
 def trayectoria(t):
     x = R0 * np.cos(OMEGA * t)
     y = R0 * np.sin(OMEGA * t)
@@ -55,12 +56,14 @@ def trayectoria(t):
     return x, y, z
 
 #para que sirve esta funcion
+#Didi
 def intensidad(r, z):
     return I0 + A * (R**2 - r**2) * np.cos(
         np.pi * z / (2 * H)
     )
 
 #para que sirve esta funcion
+#Didi
 def gradiente_cilindrico(r, z):
     gr = -2 * A * r * np.cos(
         np.pi * z / (2 * H)
@@ -74,6 +77,7 @@ def gradiente_cilindrico(r, z):
     return gr, gtheta, gz
 
 #para que sirve esta funcion
+#Didi
 def gradiente_cartesiano(x, y, z):
     r = np.hypot(x, y)
     gr, _, gz = gradiente_cilindrico(r, z)
@@ -83,6 +87,7 @@ def gradiente_cartesiano(x, y, z):
     return gx, gy, gz
 
 #para que sirve esta funcion
+#Didi
 def calcular_energia():
     energia, error = tplquad(
         lambda z, r, theta: intensidad(r, z) * r,
@@ -96,6 +101,7 @@ def calcular_energia():
     return energia, error
 
 #para que sirve esta funcion
+#Didi
 def calcular_resultados():
     rapidez = np.sqrt(
         (R0 * OMEGA)**2 + VZ**2
@@ -115,6 +121,7 @@ def calcular_resultados():
     }
 
 #para que sirve esta funcion
+#Angel
 def formato_tiempo(segundos):
     total_ms = round(segundos * 1000)
     minutos = total_ms // 60000
@@ -128,6 +135,7 @@ def formato_tiempo(segundos):
 
 #BARRA SUPERIOR DE WINDOWS
 #para que sirve esta funcion
+#Angel
 def cambiar_color_barra(ventana, oscuro):
     if sys.platform != "win32":
         return
@@ -189,6 +197,7 @@ def cambiar_color_barra(ventana, oscuro):
 
 #EJES ESTILO GEOGEBRA
 #para que sirve esta funcion
+#Didi
 def dibujar_ejes(plotter):
     longitud = 5.5
     ejes = [
@@ -234,6 +243,7 @@ def dibujar_ejes(plotter):
 
 #PLANO CON CUADRICULA
 #para que sirve esta funcion
+#Didi
 def dibujar_plano(plotter):
     plano = pv.Plane(
         center=(0, 0, -0.05),
@@ -276,6 +286,7 @@ def dibujar_plano(plotter):
 
 #CILINDRO TRANSPARENTE
 #para que sirve esta funcion
+#Angel
 def dibujar_cilindro(plotter):
     cilindro = pv.Cylinder(
         center=(0, 0, H / 2),
@@ -294,6 +305,7 @@ def dibujar_cilindro(plotter):
 
 #CAPAS DE INTENSIDAD LUMINOSA
 #para que sirve esta funcion
+#Angel
 def dibujar_intensidad(plotter):
     rr = np.linspace(0, R, 35)
     theta = np.linspace(0, 2 * np.pi, 90)
@@ -321,6 +333,7 @@ def dibujar_intensidad(plotter):
 
 #VECTORES GRADIENTE
 #para que sirve esta funcion
+#Didi
 def dibujar_gradientes(plotter):
     tg = np.linspace(
         0.15,
@@ -359,6 +372,7 @@ def dibujar_gradientes(plotter):
 
 #VENTANA PRINCIPAL
 #para que sirve esta funcion
+#Angel
 class VentanaSimulacion(QMainWindow):
     def __init__(self, resultados):
         super().__init__()
@@ -515,6 +529,7 @@ class VentanaSimulacion(QMainWindow):
     
     #CREAR ESCENA 3D
     #para que sirve esta funcion
+    #Angel
     def crear_escena(self):
         plotter = self.plotter
         plotter.set_background(FONDO_CLARO)
@@ -611,6 +626,7 @@ class VentanaSimulacion(QMainWindow):
 
     #ETIQUETAS DE LOS EJES
     #para que sirve esta funcion
+    #Didi
     def crear_etiquetas_ejes(self):
         if self.actor_etiquetas is not None:
             self.plotter.remove_actor(
@@ -640,6 +656,7 @@ class VentanaSimulacion(QMainWindow):
 
     #PANEL DERECHO: SIMBOLOS
     #para que sirve esta funcion
+    #Angel
     def crear_leyenda(self):
         self.leyenda = QFrame(
             self.plotter
@@ -729,6 +746,7 @@ class VentanaSimulacion(QMainWindow):
 
     #PANEL IZQUIERDO DE CALCULOS
     #para que sirve esta funcion
+    #Angel
     def crear_panel_calculos(self):
         self.panel_calculos = QFrame(
             self.plotter
@@ -816,6 +834,7 @@ class VentanaSimulacion(QMainWindow):
 
     #PANEL DEL TIEMPO SIMULADO CORREGIDO
     #para que sirve esta funcion
+    #Angel
     def crear_panel_tiempo(self):
         self.panel_tiempo = QFrame(
             self.plotter
@@ -872,6 +891,7 @@ class VentanaSimulacion(QMainWindow):
 
     #POSICIONAR PANELES
     #para que sirve esta funcion
+    #Angel
     def posicionar_paneles(self):
         margen = 16
         altura = 55
@@ -911,6 +931,7 @@ class VentanaSimulacion(QMainWindow):
 
     #ACTIVAR O DETENER ROTACION
     #para que sirve esta funcion
+    #Angel
     def alternar_rotacion(self):
         if not self.rotacion_automatica:
             self.rotacion_automatica = True
@@ -928,6 +949,7 @@ class VentanaSimulacion(QMainWindow):
 
     #DETENER ROTACION
     #para que sirve esta funcion
+    #Didi
     def detener_rotacion(self):
         self.rotacion_automatica = False
         self.timer_rotacion.stop()
@@ -939,6 +961,7 @@ class VentanaSimulacion(QMainWindow):
 
     #ACTUALIZAR ROTACION AUTOMATICA
     #para que sirve esta funcion
+    #Angel
     def actualizar_rotacion(self):
         if not self.rotacion_automatica:
             return
@@ -966,6 +989,7 @@ class VentanaSimulacion(QMainWindow):
 
     #ESTILO DE BOTON DE ROTACION
     #para que sirve esta funcion
+    #Angel
     def actualizar_estilo_rotacion(self):
         if self.rotacion_automatica:
             self.boton_rotacion.setStyleSheet(
@@ -1011,6 +1035,7 @@ class VentanaSimulacion(QMainWindow):
 
     #RESTAURAR VISTA ORIGINAL
     #para que sirve esta funcion
+    #Angel
     def restaurar_vista(self):
         self.detener_rotacion()
         self.plotter.camera_position = (
@@ -1031,6 +1056,7 @@ class VentanaSimulacion(QMainWindow):
 
     #BLOQUEAR O DESBLOQUEAR VISTA
     #para que sirve esta funcion
+    #Angel
     def alternar_bloqueo(self):
         self.vista_bloqueada = (
             not self.vista_bloqueada
@@ -1047,6 +1073,7 @@ class VentanaSimulacion(QMainWindow):
 
     #EVENTOS DEL MOUSE
     #para que sirve esta funcion
+    #Angel
     def eventFilter(self, objeto, evento):
         if objeto is self.plotter:
             tipo = evento.type()
@@ -1074,6 +1101,7 @@ class VentanaSimulacion(QMainWindow):
 
     #CAMBIAR TEMA
     #para que sirve esta funcion
+    #Didi
     def cambiar_tema(self):
         self.modo_oscuro = (
             not self.modo_oscuro
@@ -1082,6 +1110,7 @@ class VentanaSimulacion(QMainWindow):
 
     #ESTILO DEL CANDADO
     #para que sirve esta funcion
+    #Angel
     def actualizar_estilo_candado(self):
 
         if self.vista_bloqueada:
@@ -1127,6 +1156,7 @@ class VentanaSimulacion(QMainWindow):
 
     #APLICAR MODO CLARO U OSCURO
     #para que sirve esta funcion
+    #Didi
     def aplicar_tema(self):
         if self.modo_oscuro:
             fondo_3d = FONDO_OSCURO
@@ -1312,6 +1342,7 @@ class VentanaSimulacion(QMainWindow):
 
     #INICIAR O PAUSAR SIMULACION
     #para que sirve esta funcion
+    #Angel
     def iniciar_pausar(self):
         if not self.ejecutando:
             self.inicio_intervalo = (
@@ -1344,6 +1375,7 @@ class VentanaSimulacion(QMainWindow):
 
     #REINICIAR SIMULACION
     #para que sirve esta funcion
+    #Angel
     def reiniciar(self):
         self.timer.stop()
         self.ejecutando = False
@@ -1361,6 +1393,7 @@ class VentanaSimulacion(QMainWindow):
 
     #ACTUALIZAR ANIMACION
     #para que sirve esta funcion
+    #Angel
     def actualizar_animacion(self):
         if not self.ejecutando:
             return
@@ -1377,6 +1410,7 @@ class VentanaSimulacion(QMainWindow):
 
     #ACTUALIZAR PARTICULA Y RECORRIDO
     #para que sirve esta funcion
+    #Angel
     def actualizar_posicion(self, tiempo):
         self.tiempo_actual = tiempo
         # POSICION DE LA PARTICULA
@@ -1432,6 +1466,7 @@ class VentanaSimulacion(QMainWindow):
 
     #CERRAR VENTANA
     #para que sirve esta funcion
+    #Didi
     def closeEvent(self, evento):
         self.timer.stop()
         self.timer_rotacion.stop()
@@ -1440,6 +1475,7 @@ class VentanaSimulacion(QMainWindow):
 
 #RESULTADOS EN TERMINAL
 #para que sirve esta funcion
+#Didi
 def mostrar_resultados(resultados):
     print("===================================")
     print(" RESULTADOS DEL CALCULO VECTORIAL")
@@ -1467,6 +1503,7 @@ def mostrar_resultados(resultados):
 
 #PROGRAMA PRINCIPAL
 #para que sirve esta funcion
+#Didi
 def main():
     resultados = calcular_resultados()
     mostrar_resultados(resultados)
@@ -1492,6 +1529,7 @@ def main():
     )
     sys.exit(app.exec())
 
-#para que sirve esta funcion
+#para que sirve esto
+#Didi
 if __name__ == "__main__":
     main()
