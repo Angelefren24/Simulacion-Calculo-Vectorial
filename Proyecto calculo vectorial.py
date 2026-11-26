@@ -1,18 +1,16 @@
-#explicar para que son cada una de las librerias importadas:
-#Angel
-import sys     
-import time
-import ctypes
-import copy
-import numpy as np
-import pyvista as pv
+#Librerias utilizadas en el proyecto
+import sys      #Permite controlar la ejecucion y cierre del programa.
+import time     #Permite medir y controlar los tiempos de la simulacion.
+import ctypes   #Permite acceder a funciones de Windows, como modificar la barra de titulo.
+import copy     #Permite realizar copias de objetos sin modificar los originales.
+import numpy as np  #Permite realizar operaciones matematicas con arreglos y vectores.
+import pyvista as pv  #Permite crear y visualizar los elementos graficos en 3D.
 
-#explicar para que esto:
-#Angel
-from scipy.integrate import tplquad
-from pyvistaqt import QtInteractor
-from PySide6.QtCore import QTimer, Qt, QEvent
-from PySide6.QtWidgets import (
+#Importacion de funciones y componentes especificos
+from scipy.integrate import tplquad #Permite calcular integrales triples
+from pyvistaqt import QtInteractor #Permite integrar la visualizacion 3D de PyVista en la interfaz grafica.
+from PySide6.QtCore import QTimer, Qt, QEvent #Componentes para controlar el tiempo, los eventos y la interfaz.
+from PySide6.QtWidgets import ( #Componentes utilizados para construir la interfaz grafica.
     QApplication,
     QMainWindow,
     QWidget,
@@ -46,24 +44,33 @@ LEYENDA_CLARA = "#FFFFFF"
 AZUL_HELICE = "#18276B"
 AZUL_RECORRIDO = "#1E90FF"
 
-    # FUNCIONES MATEMATICAS
-#para que sirve esta funcion 
-#Didi
+
+# FUNCIONES MATEMATICAS
+
+#Permite calcular la posicion de la particula en los ejes X, Y y Z
+#en cualquier instante de tiempo, siguiendo una trayectoria
+#helicoidal dentro del cilindro.
 def trayectoria(t):
     x = R0 * np.cos(OMEGA * t)
     y = R0 * np.sin(OMEGA * t)
     z = VZ * t
     return x, y, z
 
-#para que sirve esta funcion
-#Didi
+
+#Permite calcular la intensidad luminosa en cualquier punto
+#del cilindro dependiendo de su distancia al eje central
+#y de la altura en la que se encuentra.
+#Representa una densidad volumetrica de potencia en W/m^3.
 def intensidad(r, z):
     return I0 + A * (R**2 - r**2) * np.cos(
         np.pi * z / (2 * H)
     )
 
-#para que sirve esta funcion
-#Didi
+
+#Permite calcular el gradiente de la intensidad luminosa
+#en coordenadas cilindricas mediante las derivadas parciales
+#respecto al radio, el angulo y la altura.
+#Determina la direccion de maximo aumento de la intensidad.
 def gradiente_cilindrico(r, z):
     gr = -2 * A * r * np.cos(
         np.pi * z / (2 * H)
@@ -76,8 +83,10 @@ def gradiente_cilindrico(r, z):
     )
     return gr, gtheta, gz
 
-#para que sirve esta funcion
-#Didi
+
+#Permite convertir las componentes del gradiente de coordenadas
+#cilindricas a coordenadas cartesianas para representar
+#los vectores en los ejes X, Y y Z de la simulacion.
 def gradiente_cartesiano(x, y, z):
     r = np.hypot(x, y)
     gr, _, gz = gradiente_cilindrico(r, z)
@@ -86,10 +95,13 @@ def gradiente_cartesiano(x, y, z):
     gy = gr * np.sin(theta)
     return gx, gy, gz
 
-#para que sirve esta funcion
-#Didi
-def calcular_energia():
-    energia, error = tplquad(
+
+#Permite calcular la potencia luminosa total mediante una integral
+#triple del campo de intensidad en todo el volumen del cilindro.
+#El resultado se expresa en watts y tambien se obtiene
+#el error estimado de la integracion numerica.
+def calcular_potencia():
+    potencia, error = tplquad(
         lambda z, r, theta: intensidad(r, z) * r,
         0,
         2 * np.pi,
@@ -98,10 +110,13 @@ def calcular_energia():
         lambda theta, r: 0,
         lambda theta, r: H
     )
-    return energia, error
+    return potencia, error
 
-#para que sirve esta funcion
-#Didi
+
+#Permite calcular la rapidez, la longitud de arco y la curvatura
+#de la trayectoria helicoidal, asi como obtener la potencia
+#luminosa total y el error estimado de la integral triple.
+#Almacena los resultados para mostrarlos en la simulacion.
 def calcular_resultados():
     rapidez = np.sqrt(
         (R0 * OMEGA)**2 + VZ**2
@@ -111,17 +126,19 @@ def calcular_resultados():
         R0 * OMEGA**2
         / ((R0 * OMEGA)**2 + VZ**2)
     )
-    energia, error = calcular_energia()
+    potencia, error = calcular_potencia()
     return {
         "rapidez": rapidez,
         "longitud": longitud,
         "curvatura": curvatura,
-        "energia": energia,
+        "potencia": potencia,
         "error": error
     }
 
-#para que sirve esta funcion
-#Angel
+
+#Convierte el tiempo de la simulacion de segundos a minutos,
+#segundos y milisegundos para mostrarlo en el cronometro
+#de la interfaz con el formato MM:SS:mmm.
 def formato_tiempo(segundos):
     total_ms = round(segundos * 1000)
     minutos = total_ms // 60000
@@ -133,9 +150,10 @@ def formato_tiempo(segundos):
         f"{milisegundos:03d}"
     )
 
+
 #BARRA SUPERIOR DE WINDOWS
-#para que sirve esta funcion
-#Angel
+#Permite cambiar el color de fondo y del texto de la barra superior
+#de la ventana dependiendo del modo claro u oscuro seleccionado.
 def cambiar_color_barra(ventana, oscuro):
     if sys.platform != "win32":
         return
@@ -195,9 +213,11 @@ def cambiar_color_barra(ventana, oscuro):
     except (OSError, AttributeError):
         pass
 
+
 #EJES ESTILO GEOGEBRA
-#para que sirve esta funcion
-#Didi
+#Permite dibujar los tres ejes del sistema de coordenadas
+#cartesianas, utilizando el color rojo para X, verde para Y
+#y azul para Z, con flechas que indican su direccion positiva.
 def dibujar_ejes(plotter):
     longitud = 5.5
     ejes = [
@@ -241,9 +261,11 @@ def dibujar_ejes(plotter):
             color=color
         )
 
+
 #PLANO CON CUADRICULA
-#para que sirve esta funcion
-#Didi
+#Permite crear un plano horizontal con una cuadricula
+#sobre los ejes X y Y para facilitar la ubicacion
+#de los elementos dentro de la escena tridimensional.
 def dibujar_plano(plotter):
     plano = pv.Plane(
         center=(0, 0, -0.05),
@@ -284,9 +306,10 @@ def dibujar_plano(plotter):
         )
     return actor_plano, actores_cuadricula
 
+
 #CILINDRO TRANSPARENTE
-#para que sirve esta funcion
-#Angel
+#Permite dibujar el cilindro transparente con el radio y la altura
+#establecidos, representando el espacio donde se mueve la particula.
 def dibujar_cilindro(plotter):
     cilindro = pv.Cylinder(
         center=(0, 0, H / 2),
@@ -303,9 +326,11 @@ def dibujar_cilindro(plotter):
         smooth_shading=True
     )
 
+
 #CAPAS DE INTENSIDAD LUMINOSA
-#para que sirve esta funcion
-#Angel
+#Permite representar la intensidad luminosa mediante tres capas
+#horizontales ubicadas a diferentes alturas dentro del cilindro.
+#Los colores representan los diferentes valores de intensidad.
 def dibujar_intensidad(plotter):
     rr = np.linspace(0, R, 35)
     theta = np.linspace(0, 2 * np.pi, 90)
@@ -331,9 +356,12 @@ def dibujar_intensidad(plotter):
             show_scalar_bar=False
         )
 
+
 #VECTORES GRADIENTE
-#para que sirve esta funcion
-#Didi
+#Permite calcular y representar los vectores gradiente
+#en diferentes puntos de la trayectoria helicoidal.
+#Las flechas rojas se normalizan para representar la direccion
+#de maximo aumento de la intensidad y no su magnitud real.
 def dibujar_gradientes(plotter):
     tg = np.linspace(
         0.15,
@@ -370,9 +398,10 @@ def dibujar_gradientes(plotter):
                 color="red"
             )
 
+
 #VENTANA PRINCIPAL
-#para que sirve esta funcion
-#Angel
+#Clase encargada de crear y configurar la ventana principal,
+#los botones, los paneles y los temporizadores de la simulacion.
 class VentanaSimulacion(QMainWindow):
     def __init__(self, resultados):
         super().__init__()
@@ -381,16 +410,19 @@ class VentanaSimulacion(QMainWindow):
             "Proyecto de Calculo Vectorial - Simulacion 3D"
         )
         self.resize(1300, 900)
+
         # ESTADO DE SIMULACION
         self.ejecutando = False
         self.tiempo_acumulado = 0.0
         self.inicio_intervalo = None
         self.tiempo_actual = 0.0
+
         # ESTADO VISUAL
         self.modo_oscuro = False
         self.vista_bloqueada = False
         self.rotacion_automatica = False
         self.ultimo_instante_rotacion = None
+
         # CONTENEDOR PRINCIPAL
         self.contenedor = QWidget()
         self.contenedor.setObjectName(
@@ -406,6 +438,7 @@ class VentanaSimulacion(QMainWindow):
             0, 0, 0, 0
         )
         self.layout_principal.setSpacing(0)
+
         # ESCENA 3D
         self.plotter = QtInteractor(
             self.contenedor,
@@ -415,6 +448,7 @@ class VentanaSimulacion(QMainWindow):
             self.plotter,
             stretch=1
         )
+
         # PANEL INFERIOR
         self.panel = QWidget()
         self.panel.setObjectName(
@@ -427,6 +461,7 @@ class VentanaSimulacion(QMainWindow):
             8, 10, 8, 10
         )
         self.layout_botones.setSpacing(6)
+
         self.boton_inicio = QPushButton(
             "Iniciar simulación"
         )
@@ -448,6 +483,7 @@ class VentanaSimulacion(QMainWindow):
         self.etiqueta_estado = QLabel(
             "Estado: Sin iniciar"
         )
+
         botones = [
             self.boton_inicio,
             self.boton_reiniciar,
@@ -456,6 +492,7 @@ class VentanaSimulacion(QMainWindow):
             self.boton_candado,
             self.boton_tema
         ]
+
         for boton in botones:
             boton.setMinimumHeight(42)
             boton.setCursor(
@@ -464,6 +501,7 @@ class VentanaSimulacion(QMainWindow):
             self.layout_botones.addWidget(
                 boton
             )
+
         self.layout_botones.addStretch()
         self.layout_botones.addWidget(
             self.etiqueta_estado
@@ -471,6 +509,7 @@ class VentanaSimulacion(QMainWindow):
         self.layout_principal.addWidget(
             self.panel
         )
+
         # CONEXIONES DE BOTONES
         self.boton_inicio.clicked.connect(
             self.iniciar_pausar
@@ -490,6 +529,7 @@ class VentanaSimulacion(QMainWindow):
         self.boton_tema.clicked.connect(
             self.cambiar_tema
         )
+
         # CREAR ESCENA
         self.crear_escena()
         self.camara_original = copy.deepcopy(
@@ -501,11 +541,13 @@ class VentanaSimulacion(QMainWindow):
         self.proyeccion_original = (
             self.plotter.camera.GetParallelProjection()
         )
+
         # PANELES INFORMATIVOS
         self.crear_leyenda()
         self.crear_panel_calculos()
         self.crear_panel_tiempo()
         self.plotter.installEventFilter(self)
+
         # TEMPORIZADOR DE PARTICULA
         self.timer = QTimer(self)
         self.timer.setTimerType(
@@ -515,6 +557,7 @@ class VentanaSimulacion(QMainWindow):
         self.timer.timeout.connect(
             self.actualizar_animacion
         )
+
         # TEMPORIZADOR DE ROTACION
         self.timer_rotacion = QTimer(self)
         self.timer_rotacion.setTimerType(
@@ -524,12 +567,15 @@ class VentanaSimulacion(QMainWindow):
         self.timer_rotacion.timeout.connect(
             self.actualizar_rotacion
         )
+
         self.aplicar_tema()
         self.actualizar_posicion(0.0)
-    
+
+
     #CREAR ESCENA 3D
-    #para que sirve esta funcion
-    #Angel
+    #Permite crear la escena tridimensional con el cilindro,
+    #la trayectoria helicoidal, los gradientes, los ejes y la particula.
+    #Tambien establece la posicion inicial de la camara.
     def crear_escena(self):
         plotter = self.plotter
         plotter.set_background(FONDO_CLARO)
@@ -539,12 +585,15 @@ class VentanaSimulacion(QMainWindow):
             font_size=13,
             color="black"
         )
+
         (
             self.actor_plano,
             self.actores_cuadricula
         ) = dibujar_plano(plotter)
+
         dibujar_cilindro(plotter)
         dibujar_intensidad(plotter)
+
         # HELICE CON DOS COLORES
         # Azul claro: recorrido realizado.
         # Azul oscuro: recorrido pendiente.
@@ -574,6 +623,7 @@ class VentanaSimulacion(QMainWindow):
                 opacity=0.85
             )
         )
+
         # Recorrido inicialmente vacio
         x0, y0, z0 = trayectoria(0.0)
         punto_inicial = np.array([
@@ -594,11 +644,13 @@ class VentanaSimulacion(QMainWindow):
             opacity=1.0
         )
         self.actor_recorrido.SetVisibility(False)
+
         # GRADIENTES Y EJES
         dibujar_gradientes(plotter)
         dibujar_ejes(plotter)
         self.actor_etiquetas = None
         self.crear_etiquetas_ejes()
+
         # PARTICULA NARANJA
         esfera = pv.Sphere(
             radius=0.20,
@@ -614,6 +666,7 @@ class VentanaSimulacion(QMainWindow):
         self.actor_particula.SetPosition(
             x0, y0, z0
         )
+
         # CAMARA INICIAL
         plotter.camera_position = [
             (17, -19, 14),
@@ -624,20 +677,24 @@ class VentanaSimulacion(QMainWindow):
         plotter.enable_trackball_style()
         plotter.render()
 
+
     #ETIQUETAS DE LOS EJES
-    #para que sirve esta funcion
-    #Didi
+    #Permite colocar las etiquetas X, Y y Z en los ejes
+    #del sistema de coordenadas y cambiar su color
+    #dependiendo del modo claro u oscuro seleccionado.
     def crear_etiquetas_ejes(self):
         if self.actor_etiquetas is not None:
             self.plotter.remove_actor(
                 self.actor_etiquetas,
                 render=False
             )
+
         color = (
             "white"
             if self.modo_oscuro
             else "black"
         )
+
         self.actor_etiquetas = (
             self.plotter.add_point_labels(
                 np.array([
@@ -654,9 +711,10 @@ class VentanaSimulacion(QMainWindow):
             )
         )
 
+
     #PANEL DERECHO: SIMBOLOS
-    #para que sirve esta funcion
-    #Angel
+    #Permite crear el panel que muestra los nombres, colores
+    #y simbolos de los elementos presentes en la simulacion.
     def crear_leyenda(self):
         self.leyenda = QFrame(
             self.plotter
@@ -665,6 +723,7 @@ class VentanaSimulacion(QMainWindow):
             "leyendaSimulacion"
         )
         self.leyenda.setFixedWidth(225)
+
         layout = QVBoxLayout(
             self.leyenda
         )
@@ -672,6 +731,7 @@ class VentanaSimulacion(QMainWindow):
             14, 12, 14, 12
         )
         layout.setSpacing(9)
+
         titulo = QLabel(
             "Elementos de la simulación"
         )
@@ -679,6 +739,7 @@ class VentanaSimulacion(QMainWindow):
             "tituloPanel"
         )
         layout.addWidget(titulo)
+
         elementos = [
             (
                 "Hélice pendiente",
@@ -701,6 +762,7 @@ class VentanaSimulacion(QMainWindow):
                 "#FF9900"
             )
         ]
+
         for nombre, simbolo, color in elementos:
             fila = QWidget()
             fila.setObjectName(
@@ -712,10 +774,12 @@ class VentanaSimulacion(QMainWindow):
             fila_layout.setContentsMargins(
                 0, 0, 0, 0
             )
+
             etiqueta = QLabel(nombre)
             etiqueta.setObjectName(
                 "textoPanel"
             )
+
             icono = QLabel(simbolo)
             icono.setAlignment(
                 Qt.AlignmentFlag.AlignCenter
@@ -730,6 +794,7 @@ class VentanaSimulacion(QMainWindow):
                 border: none;
                 """
             )
+
             fila_layout.addWidget(
                 etiqueta
             )
@@ -740,13 +805,15 @@ class VentanaSimulacion(QMainWindow):
             layout.addWidget(
                 fila
             )
+
         self.leyenda.adjustSize()
         self.leyenda.show()
         self.leyenda.raise_()
 
+
     #PANEL IZQUIERDO DE CALCULOS
-    #para que sirve esta funcion
-    #Angel
+    #Permite crear el panel donde se muestran los resultados
+    #de los calculos matematicos realizados en el proyecto.
     def crear_panel_calculos(self):
         self.panel_calculos = QFrame(
             self.plotter
@@ -755,6 +822,7 @@ class VentanaSimulacion(QMainWindow):
             "panelCalculos"
         )
         self.panel_calculos.setFixedWidth(260)
+
         layout = QVBoxLayout(
             self.panel_calculos
         )
@@ -762,6 +830,7 @@ class VentanaSimulacion(QMainWindow):
             14, 12, 14, 12
         )
         layout.setSpacing(10)
+
         titulo = QLabel(
             "Resultados del cálculo vectorial"
         )
@@ -770,6 +839,7 @@ class VentanaSimulacion(QMainWindow):
         )
         titulo.setWordWrap(True)
         layout.addWidget(titulo)
+
         datos = [
             (
                 "Rapidez",
@@ -784,14 +854,15 @@ class VentanaSimulacion(QMainWindow):
                 f"{self.resultados['curvatura']:.6f} 1/m"
             ),
             (
-                "Energía luminosa",
-                f"{self.resultados['energia']:.4f} W"
+                "Potencia luminosa total",
+                f"{self.resultados['potencia']:.4f} W"
             ),
             (
                 "Error estimado",
                 f"{self.resultados['error']:.2e}"
             )
         ]
+
         for nombre, valor in datos:
             bloque = QWidget()
             bloque.setObjectName(
@@ -804,12 +875,14 @@ class VentanaSimulacion(QMainWindow):
                 0, 2, 0, 2
             )
             bloque_layout.setSpacing(3)
+
             etiqueta_nombre = QLabel(
                 nombre
             )
             etiqueta_nombre.setObjectName(
                 "nombreCalculo"
             )
+
             etiqueta_valor = QLabel(
                 valor
             )
@@ -819,6 +892,7 @@ class VentanaSimulacion(QMainWindow):
             etiqueta_valor.setTextInteractionFlags(
                 Qt.TextInteractionFlag.TextSelectableByMouse
             )
+
             bloque_layout.addWidget(
                 etiqueta_nombre
             )
@@ -828,13 +902,15 @@ class VentanaSimulacion(QMainWindow):
             layout.addWidget(
                 bloque
             )
+
         self.panel_calculos.adjustSize()
         self.panel_calculos.show()
         self.panel_calculos.raise_()
 
+
     #PANEL DEL TIEMPO SIMULADO CORREGIDO
-    #para que sirve esta funcion
-    #Angel
+    #Permite crear el panel donde se muestra el tiempo transcurrido
+    #de la simulacion en minutos, segundos y milisegundos.
     def crear_panel_tiempo(self):
         self.panel_tiempo = QFrame(
             self.plotter
@@ -845,6 +921,7 @@ class VentanaSimulacion(QMainWindow):
         self.panel_tiempo.setFixedSize(
             260, 115
         )
+
         layout = QVBoxLayout(
             self.panel_tiempo
         )
@@ -852,6 +929,7 @@ class VentanaSimulacion(QMainWindow):
             14, 12, 14, 12
         )
         layout.setSpacing(8)
+
         # Titulo del cronometro
         titulo = QLabel(
             "◷  Tiempo simulado"
@@ -864,6 +942,7 @@ class VentanaSimulacion(QMainWindow):
             Qt.AlignmentFlag.AlignLeft
             | Qt.AlignmentFlag.AlignVCenter
         )
+
         # Valor del cronometro
         self.etiqueta_tiempo = QLabel(
             "00:00:000"
@@ -880,26 +959,31 @@ class VentanaSimulacion(QMainWindow):
         self.etiqueta_tiempo.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextSelectableByMouse
         )
+
         layout.addWidget(
             titulo
         )
         layout.addWidget(
             self.etiqueta_tiempo
         )
+
         self.panel_tiempo.show()
         self.panel_tiempo.raise_()
 
+
     #POSICIONAR PANELES
-    #para que sirve esta funcion
-    #Angel
+    #Permite establecer la posicion de los paneles informativos
+    #de acuerdo con las dimensiones de la ventana.
     def posicionar_paneles(self):
         margen = 16
         altura = 55
+
         # Resultados arriba a la izquierda
         self.panel_calculos.move(
             margen,
             altura
         )
+
         # Leyenda arriba a la derecha
         x = (
             self.plotter.width()
@@ -910,6 +994,7 @@ class VentanaSimulacion(QMainWindow):
             max(margen, x),
             altura
         )
+
         # Cronometro abajo a la izquierda
         y_tiempo = (
             self.plotter.height()
@@ -925,13 +1010,15 @@ class VentanaSimulacion(QMainWindow):
                 y_tiempo
             )
         )
+
         self.panel_calculos.raise_()
         self.leyenda.raise_()
         self.panel_tiempo.raise_()
 
+
     #ACTIVAR O DETENER ROTACION
-    #para que sirve esta funcion
-    #Angel
+    #Permite activar o detener la rotacion automatica de la camara
+    #mediante el boton correspondiente.
     def alternar_rotacion(self):
         if not self.rotacion_automatica:
             self.rotacion_automatica = True
@@ -943,13 +1030,15 @@ class VentanaSimulacion(QMainWindow):
                 "■  Detener rotación"
             )
         else:
-
             self.detener_rotacion()
+
         self.actualizar_estilo_rotacion()
 
+
     #DETENER ROTACION
-    #para que sirve esta funcion
-    #Didi
+    #Permite detener el movimiento automatico de la camara,
+    #desactivar su temporizador y actualizar el texto
+    #y la apariencia del boton de rotacion.
     def detener_rotacion(self):
         self.rotacion_automatica = False
         self.timer_rotacion.stop()
@@ -959,16 +1048,20 @@ class VentanaSimulacion(QMainWindow):
         )
         self.actualizar_estilo_rotacion()
 
+
     #ACTUALIZAR ROTACION AUTOMATICA
-    #para que sirve esta funcion
-    #Angel
+    #Permite actualizar el angulo de rotacion de la camara
+    #de acuerdo con el tiempo transcurrido y la velocidad establecida.
     def actualizar_rotacion(self):
         if not self.rotacion_automatica:
             return
+
         ahora = time.perf_counter()
+
         if self.ultimo_instante_rotacion is None:
             self.ultimo_instante_rotacion = ahora
             return
+
         delta_tiempo = (
             ahora - self.ultimo_instante_rotacion
         )
@@ -981,15 +1074,17 @@ class VentanaSimulacion(QMainWindow):
             VELOCIDAD_ROTACION
             * delta_tiempo
         )
+
         camara = self.plotter.camera
         camara.Azimuth(angulo)
         camara.SetViewUp(0, 0, 1)
         camara.OrthogonalizeViewUp()
         self.plotter.render()
 
+
     #ESTILO DE BOTON DE ROTACION
-    #para que sirve esta funcion
-    #Angel
+    #Permite cambiar la apariencia del boton de rotacion
+    #dependiendo de si se encuentra activado o desactivado.
     def actualizar_estilo_rotacion(self):
         if self.rotacion_automatica:
             self.boton_rotacion.setStyleSheet(
@@ -1017,6 +1112,7 @@ class VentanaSimulacion(QMainWindow):
                 fondo = LEYENDA_CLARA
                 texto = "#202936"
                 borde = "#D5DBE4"
+
             self.boton_rotacion.setStyleSheet(
                 f"""
                 QPushButton {{
@@ -1033,9 +1129,10 @@ class VentanaSimulacion(QMainWindow):
                 """
             )
 
+
     #RESTAURAR VISTA ORIGINAL
-    #para que sirve esta funcion
-    #Angel
+    #Permite regresar la camara a su posicion y escala originales
+    #sin reiniciar el movimiento de la particula ni el cronometro.
     def restaurar_vista(self):
         self.detener_rotacion()
         self.plotter.camera_position = (
@@ -1054,13 +1151,15 @@ class VentanaSimulacion(QMainWindow):
         # No se reinicia la particula
         # ni el cronometro.
 
+
     #BLOQUEAR O DESBLOQUEAR VISTA
-    #para que sirve esta funcion
-    #Angel
+    #Permite activar o desactivar el bloqueo de la vista
+    #para controlar la interaccion del usuario con la camara.
     def alternar_bloqueo(self):
         self.vista_bloqueada = (
             not self.vista_bloqueada
         )
+
         if self.vista_bloqueada:
             self.boton_candado.setText(
                 "🔒  Desbloquear vista"
@@ -1069,19 +1168,24 @@ class VentanaSimulacion(QMainWindow):
             self.boton_candado.setText(
                 "🔓  Bloquear vista"
             )
+
         self.actualizar_estilo_candado()
 
+
     #EVENTOS DEL MOUSE
-    #para que sirve esta funcion
-    #Angel
+    #Permite controlar los eventos del mouse y los cambios
+    #de tamaño de la escena, evitando modificar la vista
+    #manualmente cuando se encuentra bloqueada.
     def eventFilter(self, objeto, evento):
         if objeto is self.plotter:
             tipo = evento.type()
+
             if tipo == QEvent.Type.Resize:
                 QTimer.singleShot(
                     0,
                     self.posicionar_paneles
                 )
+
             if self.vista_bloqueada:
                 eventos_bloqueados = (
                     QEvent.Type.MouseButtonPress,
@@ -1092,25 +1196,29 @@ class VentanaSimulacion(QMainWindow):
                     QEvent.Type.Gesture,
                     QEvent.Type.NativeGesture
                 )
+
                 if tipo in eventos_bloqueados:
                     return True
+
         return super().eventFilter(
             objeto,
             evento
         )
 
+
     #CAMBIAR TEMA
-    #para que sirve esta funcion
-    #Didi
+    #Permite alternar entre el modo claro y el modo oscuro
+    #de la interfaz mediante el boton correspondiente.
     def cambiar_tema(self):
         self.modo_oscuro = (
             not self.modo_oscuro
         )
         self.aplicar_tema()
 
+
     #ESTILO DEL CANDADO
-    #para que sirve esta funcion
-    #Angel
+    #Permite cambiar la apariencia del boton del candado
+    #dependiendo de si la vista esta bloqueada o desbloqueada.
     def actualizar_estilo_candado(self):
 
         if self.vista_bloqueada:
@@ -1121,6 +1229,7 @@ class VentanaSimulacion(QMainWindow):
                     color: white;
                     border: 1px solid #C85560;
                     font-size: 13px;
+                    font-weight: bold;
                     border-radius: 6px;
                     padding: 8px 12px;
                 }
@@ -1138,6 +1247,7 @@ class VentanaSimulacion(QMainWindow):
                 fondo = LEYENDA_CLARA
                 texto = "#202936"
                 borde = "#D5DBE4"
+
             self.boton_candado.setStyleSheet(
                 f"""
                 QPushButton {{
@@ -1154,9 +1264,11 @@ class VentanaSimulacion(QMainWindow):
                 """
             )
 
+
     #APLICAR MODO CLARO U OSCURO
-    #para que sirve esta funcion
-    #Didi
+    #Permite aplicar los colores correspondientes al tema
+    #seleccionado, modificando el fondo de la escena,
+    #los paneles, los botones, los textos y la cuadricula.
     def aplicar_tema(self):
         if self.modo_oscuro:
             fondo_3d = FONDO_OSCURO
@@ -1164,6 +1276,7 @@ class VentanaSimulacion(QMainWindow):
             fondo_leyenda = LEYENDA_OSCURA
             texto = "#F3F6FC"
             borde = "#46556D"
+
             color_cuadricula = (
                 0.55, 0.60, 0.70
             )
@@ -1173,6 +1286,7 @@ class VentanaSimulacion(QMainWindow):
             color_texto_vtk = (
                 1.0, 1.0, 1.0
             )
+
             self.boton_tema.setText(
                 "☀  Modo claro"
             )
@@ -1182,6 +1296,7 @@ class VentanaSimulacion(QMainWindow):
             fondo_leyenda = LEYENDA_CLARA
             texto = "#202936"
             borde = "#D5DBE4"
+
             color_cuadricula = (
                 0.50, 0.50, 0.50
             )
@@ -1191,14 +1306,17 @@ class VentanaSimulacion(QMainWindow):
             color_texto_vtk = (
                 0.0, 0.0, 0.0
             )
+
             self.boton_tema.setText(
                 "☾  Modo oscuro"
             )
+
         # BARRA SUPERIOR
         cambiar_color_barra(
             self,
             self.modo_oscuro
         )
+
         # FONDO PRINCIPAL
         self.setStyleSheet(
             f"""
@@ -1214,22 +1332,28 @@ class VentanaSimulacion(QMainWindow):
             }}
             """
         )
+
         self.plotter.set_background(
             fondo_3d
         )
+
         # TITULO 3D
         self.texto_titulo.GetTextProperty().SetColor(
             *color_texto_vtk
         )
+
         # PLANO Y CUADRICULA
         self.actor_plano.GetProperty().SetColor(
             *color_plano
         )
+
         for actor in self.actores_cuadricula:
             actor.GetProperty().SetColor(
                 *color_cuadricula
             )
+
         self.crear_etiquetas_ejes()
+
         # BOTON PRINCIPAL
         self.boton_inicio.setStyleSheet(
             """
@@ -1246,6 +1370,7 @@ class VentanaSimulacion(QMainWindow):
             }
             """
         )
+
         # BOTONES SECUNDARIOS
         estilo_botones = f"""
             QPushButton {{
@@ -1260,6 +1385,7 @@ class VentanaSimulacion(QMainWindow):
                 border: 1px solid #1677D2;
             }}
         """
+
         self.boton_reiniciar.setStyleSheet(
             estilo_botones
         )
@@ -1269,8 +1395,10 @@ class VentanaSimulacion(QMainWindow):
         self.boton_tema.setStyleSheet(
             estilo_botones
         )
+
         self.actualizar_estilo_rotacion()
         self.actualizar_estilo_candado()
+
         self.etiqueta_estado.setStyleSheet(
             f"""
             color: {texto};
@@ -1278,6 +1406,7 @@ class VentanaSimulacion(QMainWindow):
             background: transparent;
             """
         )
+
         # ESTILO DE LOS TRES PANELES
         estilo_paneles = f"""
             QFrame#leyendaSimulacion,
@@ -1287,6 +1416,7 @@ class VentanaSimulacion(QMainWindow):
                 border: 1px solid {borde};
                 border-radius: 12px;
             }}
+
             QLabel#tituloPanel {{
                 color: {texto};
                 font-size: 13px;
@@ -1294,18 +1424,21 @@ class VentanaSimulacion(QMainWindow):
                 background: transparent;
                 border: none;
             }}
+
             QLabel#textoPanel {{
                 color: {texto};
                 font-size: 12px;
                 background: transparent;
                 border: none;
             }}
+
             QLabel#nombreCalculo {{
                 color: {texto};
                 font-size: 12px;
                 background: transparent;
                 border: none;
             }}
+
             QLabel#valorCalculo {{
                 color: #45A8FF;
                 font-size: 14px;
@@ -1313,6 +1446,7 @@ class VentanaSimulacion(QMainWindow):
                 background: transparent;
                 border: none;
             }}
+
             QLabel#valorTiempo {{
                 color: #45A8FF;
                 font-size: 24px;
@@ -1323,12 +1457,14 @@ class VentanaSimulacion(QMainWindow):
                 padding: 0px;
                 margin: 0px;
             }}
+
             QWidget#filaLeyenda,
             QWidget#bloqueCalculo {{
                 background: transparent;
                 border: none;
             }}
         """
+
         self.leyenda.setStyleSheet(
             estilo_paneles
         )
@@ -1338,11 +1474,13 @@ class VentanaSimulacion(QMainWindow):
         self.panel_tiempo.setStyleSheet(
             estilo_paneles
         )
+
         self.plotter.render()
 
+
     #INICIAR O PAUSAR SIMULACION
-    #para que sirve esta funcion
-    #Angel
+    #Permite iniciar, pausar y reanudar el movimiento de la particula,
+    #conservando el tiempo acumulado durante la simulacion.
     def iniciar_pausar(self):
         if not self.ejecutando:
             self.inicio_intervalo = (
@@ -1373,30 +1511,36 @@ class VentanaSimulacion(QMainWindow):
                 self.tiempo_acumulado % TF
             )
 
+
     #REINICIAR SIMULACION
-    #para que sirve esta funcion
-    #Angel
+    #Permite detener la simulacion, regresar la particula
+    #a su posicion inicial y establecer el cronometro en cero.
     def reiniciar(self):
         self.timer.stop()
         self.ejecutando = False
         self.tiempo_acumulado = 0.0
         self.inicio_intervalo = None
         self.tiempo_actual = 0.0
+
         self.boton_inicio.setText(
             "Iniciar simulación"
         )
         self.etiqueta_estado.setText(
             "Estado: Sin iniciar"
         )
+
         # La rotacion sigue independiente
         self.actualizar_posicion(0.0)
 
+
     #ACTUALIZAR ANIMACION
-    #para que sirve esta funcion
-    #Angel
+    #Permite calcular el tiempo transcurrido y actualizar
+    #la posicion de la particula durante la simulacion.
+    #Repite el recorrido al completar el tiempo establecido.
     def actualizar_animacion(self):
         if not self.ejecutando:
             return
+
         ahora = time.perf_counter()
         transcurrido = (
             self.tiempo_acumulado
@@ -1404,15 +1548,20 @@ class VentanaSimulacion(QMainWindow):
             - self.inicio_intervalo
         )
         tiempo_actual = transcurrido % TF
+
         self.actualizar_posicion(
             tiempo_actual
         )
 
+
     #ACTUALIZAR PARTICULA Y RECORRIDO
-    #para que sirve esta funcion
-    #Angel
+    #Permite actualizar la posicion de la particula en la trayectoria
+    #helicoidal de acuerdo con el tiempo transcurrido.
+    #Tambien actualiza el recorrido realizado, el recorrido pendiente
+    #y el tiempo mostrado en el cronometro.
     def actualizar_posicion(self, tiempo):
         self.tiempo_actual = tiempo
+
         # POSICION DE LA PARTICULA
         xp, yp, zp = trayectoria(tiempo)
         self.actor_particula.SetPosition(
@@ -1420,7 +1569,8 @@ class VentanaSimulacion(QMainWindow):
             float(yp),
             float(zp)
         )
-        # RECORRIDO AZUL CLARO        
+
+        # RECORRIDO AZUL CLARO
         # Solo aparece en la parte que
         # ya recorrio la particula.
         tiempos_recorridos = np.minimum(
@@ -1436,6 +1586,7 @@ class VentanaSimulacion(QMainWindow):
         self.recorrido.points = (
             puntos_recorridos
         )
+
         # HELICE AZUL OSCURO
         # Solo aparece en la parte que
         # falta recorrer.
@@ -1452,34 +1603,41 @@ class VentanaSimulacion(QMainWindow):
         self.helice_pendiente.points = (
             puntos_pendientes
         )
+
         self.actor_recorrido.SetVisibility(
             tiempo > 0.0001
         )
         self.actor_helice_pendiente.SetVisibility(
             tiempo < TF - 0.0001
         )
+
         # ACTUALIZAR CRONOMETRO
         self.etiqueta_tiempo.setText(
             formato_tiempo(tiempo)
         )
         self.plotter.render()
 
+
     #CERRAR VENTANA
-    #para que sirve esta funcion
-    #Didi
+    #Permite detener los temporizadores de la particula
+    #y de la rotacion automatica, ademas de cerrar
+    #correctamente la visualizacion tridimensional.
     def closeEvent(self, evento):
         self.timer.stop()
         self.timer_rotacion.stop()
         self.plotter.close()
         evento.accept()
 
+
 #RESULTADOS EN TERMINAL
-#para que sirve esta funcion
-#Didi
+#Permite mostrar en la terminal los resultados obtenidos
+#de los calculos matematicos junto con sus unidades
+#y el error estimado de la integracion numerica.
 def mostrar_resultados(resultados):
     print("===================================")
     print(" RESULTADOS DEL CALCULO VECTORIAL")
     print("===================================")
+
     print(
         f"Rapidez: "
         f"{resultados['rapidez']:.4f} m/s"
@@ -1493,32 +1651,38 @@ def mostrar_resultados(resultados):
         f"{resultados['curvatura']:.6f} 1/m"
     )
     print(
-        f"Energia luminosa: "
-        f"{resultados['energia']:.4f} W"
+        f"Potencia luminosa total: "
+        f"{resultados['potencia']:.4f} W"
     )
     print(
         f"Error estimado: "
         f"{resultados['error']:.2e}"
     )
 
+
 #PROGRAMA PRINCIPAL
-#para que sirve esta funcion
-#Didi
+#Permite realizar los calculos matematicos, mostrar los resultados
+#en la terminal, crear la ventana principal e iniciar
+#la ejecucion de la interfaz grafica de la simulacion.
 def main():
     resultados = calcular_resultados()
     mostrar_resultados(resultados)
+
     app = QApplication.instance()
     if app is None:
         app = QApplication(sys.argv)
+
     ventana = VentanaSimulacion(
         resultados
     )
     ventana.show()
+
     # Colocar paneles en sus posiciones
     QTimer.singleShot(
         0,
         ventana.posicionar_paneles
     )
+
     # Aplicar color a la barra de Windows
     QTimer.singleShot(
         100,
@@ -1527,9 +1691,11 @@ def main():
             ventana.modo_oscuro
         )
     )
+
     sys.exit(app.exec())
 
-#para que sirve esto
-#Didi
+
+#Permite ejecutar la funcion main cuando el archivo
+#se ejecuta directamente como programa principal.
 if __name__ == "__main__":
     main()
